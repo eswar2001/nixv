@@ -27,8 +27,7 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixos-unstable
       - uses: DeterminateSystems/magic-nix-cache-action@v2
-      - run: nix build -vL -j auto
-      - run: nix develop -j auto --command cargo build --release
+      - run: target/release/nixv build
 
   build-mac:
     runs-on: macos-latest
@@ -47,5 +46,4 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixos-unstable
       - uses: DeterminateSystems/magic-nix-cache-action@v2
-      - run: nix build -vL -j auto
-      - run: nix develop -j auto --command cargo build --release
+      - run: target/release/nixv build
