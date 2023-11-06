@@ -1,10 +1,11 @@
+use serde::Serialize;
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, Serialize, PartialEq, Clone, Copy)]
 pub struct StopAction {
     pub(crate) id: i64,
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, Serialize, PartialEq, PartialOrd, Clone, Copy)]
 pub enum Verbosity {
     Error = 0,
     Warn,
@@ -16,12 +17,7 @@ pub enum Verbosity {
     Vomit,
 }
 
-#[derive(Debug, Eq, PartialEq)]
-pub struct StorePath {
-    pub(crate) path: String,
-}
-
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, Serialize, PartialEq, Clone, Copy)]
 pub enum ActivityType {
     ActUnknownType = 0,
     ActCopyPathType = 100,
@@ -38,7 +34,7 @@ pub enum ActivityType {
     ActBuildWaitingType = 111,
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, Serialize, PartialEq, Clone, Copy)]
 pub struct ActivityProgress {
     pub(crate) done: i64,
     pub(crate) expected: i64,
@@ -46,54 +42,59 @@ pub struct ActivityProgress {
     pub(crate) failed: i64,
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, Serialize, PartialEq, Clone)]
 pub struct StartAction {
     pub(crate) id: i64,
     pub(crate) level: Verbosity,
     pub(crate) text: String,
     pub(crate) activity: Activity,
 }
-#[derive(Debug, Eq, PartialEq)]
+
+#[derive(Debug, Eq, Serialize, PartialEq, Clone)]
 pub struct ResultAction {
     pub(crate) id: i64,
     pub(crate) result: ActivityResult,
 }
-#[derive(Debug, Eq, PartialEq)]
+
+#[derive(Debug, Eq, Serialize, PartialEq, Clone)]
 pub struct MessageAction {
     pub(crate) level: Verbosity,
     pub(crate) msg: String,
 }
-#[derive(Debug, Eq, PartialEq)]
+
+#[derive(Debug, Eq, Serialize, PartialEq, Clone)]
 pub enum JSONMessage {
     Stop(StopAction),
     Start(StartAction),
     Result(ResultAction),
     Message(MessageAction),
 }
-#[derive(Debug, Eq, PartialEq)]
+
+#[derive(Debug, Eq, Serialize, PartialEq, Clone)]
 pub enum ActivityResult {
     FileLinked(i64, i64),
     BuildLogLine(String),
-    UntrustedPath(StorePath),
-    CorruptedPath(StorePath),
+    UntrustedPath(String),
+    CorruptedPath(String),
     SetPhase(String),
     Progress(ActivityProgress),
     SetExpected(ActivityType, i64),
     PostBuildLogLine(String),
 }
-#[derive(Debug, Eq, PartialEq)]
+
+#[derive(Debug, Eq, Serialize, PartialEq, Clone)]
 pub enum Activity {
     ActUnknown,
-    ActCopyPath(StorePath, String, String),
+    ActCopyPath(String, String, String, String),
     ActFileTransfer(String),
     ActRealise,
     ActCopyPaths,
     ActBuilds,
-    ActBuild(String, String, i16, i16),
+    ActBuild(String, String, String, i16, i16),
     ActOptimiseStore,
     ActVerifyPaths,
-    ActSubstitute(StorePath, String),
-    ActQueryPathInfo(StorePath, String),
-    ActPostBuildHook(StorePath),
+    ActSubstitute(String, String, String),
+    ActQueryPathInfo(String, String, String),
+    ActPostBuildHook(String),
     ActBuildWaiting,
 }

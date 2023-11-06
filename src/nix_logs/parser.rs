@@ -1,6 +1,16 @@
-
-use serde_json::{self, Value};
 use super::types::*;
+use serde_json::{self, Value};
+
+fn get_package_from_drv(store_path: String) -> String {
+    match store_path.split_once('-') {
+        Some((_, xs)) => xs
+            .to_owned()
+            .replace(".drv", "")
+            .replace("\\\"", "")
+            .replace("\"", ""),
+        None => store_path,
+    }
+}
 
 fn str_to_verbosity(lvl: i64) -> Verbosity {
     match lvl {
@@ -39,12 +49,8 @@ fn str_to_activity_result(activity_result: i64, fields: Vec<Value>) -> ActivityR
     match activity_result {
         100 => ActivityResult::FileLinked(fields[0].as_i64().unwrap(), fields[1].as_i64().unwrap()),
         101 => ActivityResult::BuildLogLine(fields[0].to_string()),
-        102 => ActivityResult::UntrustedPath(StorePath {
-            path: fields[0].to_string(),
-        }),
-        103 => ActivityResult::CorruptedPath(StorePath {
-            path: fields[0].to_string(),
-        }),
+        102 => ActivityResult::UntrustedPath(fields[0].to_string()),
+        103 => ActivityResult::CorruptedPath(fields[0].to_string()),
         104 => ActivityResult::SetPhase(fields[0].to_string()),
         105 => ActivityResult::Progress(ActivityProgress {
             done: fields[0].as_i64().unwrap(),
@@ -67,12 +73,11 @@ fn str_to_activity(activity: i64, fields: Vec<Value>) -> Activity {
         0 => Activity::ActUnknown,
         // actCopyPath = 100,
         100 => {
-            let store_path = StorePath {
-                path: fields[0].to_string(),
-            };
+            let store_path = fields[0].as_str().unwrap();
             let from = fields[1].to_string();
             let to = fields[2].to_string();
-            Activity::ActCopyPath(store_path, from, to)
+            let package_name = get_package_from_drv(store_path.to_owned());
+            Activity::ActCopyPath(package_name, store_path.to_string(), from, to)
         }
         // actFileTransfer = 101,
         101 => {
@@ -89,7 +94,8 @@ fn str_to_activity(activity: i64, fields: Vec<Value>) -> Activity {
         105 => {
             let path = fields[0].to_string();
             let host = fields[1].to_string();
-            Activity::ActBuild(path, host, 1, 1)
+            let package_name = get_package_from_drv(path.clone());
+            Activity::ActBuild(package_name, path, host, 1, 1)
         }
         // actOptimiseStore = 106,
         106 => Activity::ActOptimiseStore,
@@ -99,38 +105,37 @@ fn str_to_activity(activity: i64, fields: Vec<Value>) -> Activity {
         108 => {
             let path = fields[0].to_string();
             let host = fields[1].to_string();
-            Activity::ActSubstitute(StorePath { path: path }, host)
+            let package_name = get_package_from_drv(path.clone());
+            Activity::ActSubstitute(package_name, path, host)
         }
         // actQueryPathInfo = 109,
         109 => {
             let path = fields[0].to_string();
             let host = fields[1].to_string();
-            Activity::ActQueryPathInfo(StorePath { path: path }, host)
+            let package_name = get_package_from_drv(path.clone());
+            Activity::ActQueryPathInfo(package_name, path, host)
         }
         // actPostBuildHook = 110,
-        110 => Activity::ActPostBuildHook(StorePath {
-            path: fields[0].to_string(),
-        }),
+        110 => Activity::ActPostBuildHook(fields[0].to_string()),
         // actBuildWaiting = 111,
         111 => Activity::ActBuildWaiting,
         _ => panic!("Invalid Activity"),
     }
 }
 
-pub fn parse(line: String) -> () {
-    println!("{:#?}", line);
+pub fn parse(line: String) -> (Option<JSONMessage>, i64) {
     let res: serde_json::Value = serde_json::from_str(&line.replace("@nix ", "")).unwrap();
-    println!("{:#?}", res);
     let action = res.get("action").unwrap().as_str();
-    let _msg = match action {
+    let mut id = -1;
+    let msg = match action {
         Some("start") => {
-            let id = res.get("id").unwrap().as_i64().unwrap();
+            id = res.get("id").unwrap().as_i64().unwrap();
             let fields = match res.get("fields") {
                 Some(v) => v.as_array().unwrap().clone(),
                 None => Vec::new(),
             };
             let level = str_to_verbosity(res.get("level").unwrap().as_i64().unwrap());
-            let text = res.get("text").unwrap().to_string();
+            let text = serde_json::from_value(res.get("text").unwrap().clone()).unwrap();
             let _type = res.get("type").unwrap().as_i64().unwrap();
             let activity = str_to_activity(_type, fields);
             Some(JSONMessage::Start(StartAction {
@@ -141,11 +146,11 @@ pub fn parse(line: String) -> () {
             }))
         }
         Some("stop") => {
-            let id = res.get("id").unwrap().as_i64().unwrap();
+            id = res.get("id").unwrap().as_i64().unwrap();
             Some(JSONMessage::Stop(StopAction { id: id }))
         }
         Some("result") => {
-            let id = res.get("id").unwrap().as_i64().unwrap();
+            id = res.get("id").unwrap().as_i64().unwrap();
             let fields = res.get("fields").unwrap().as_array().unwrap().clone();
             let activity =
                 str_to_activity_result(res.get("type").unwrap().as_i64().unwrap(), fields);
@@ -156,7 +161,7 @@ pub fn parse(line: String) -> () {
         }
         Some("msg") => {
             let level = str_to_verbosity(res.get("level").unwrap().as_i64().unwrap());
-            let msg = res.get("msg").unwrap().to_string();
+            let msg = serde_json::from_value(res.get("msg").unwrap().clone()).unwrap();
             Some(JSONMessage::Message(MessageAction {
                 level: level,
                 msg: msg,
@@ -168,4 +173,5 @@ pub fn parse(line: String) -> () {
         }
         None => None,
     };
+    (msg, id)
 }

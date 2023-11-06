@@ -1,0 +1,304 @@
+use yansi::Paint;
+
+use crate::nix_tracker::types::{ActivityState, CommandState};
+
+use super::types::{JSONMessage, Verbosity};
+use std::time::SystemTime;
+
+pub fn process_log(
+    id: i64,
+    opt_msg: Option<JSONMessage>,
+    state: &mut CommandState,
+) -> &mut CommandState {
+    let msg = match opt_msg {
+        Some(v) => v,
+        None => panic!("parse failed"),
+    };
+    match msg {
+        JSONMessage::Start(msg) => {
+            let (id, _level, _text, activity) = (msg.id, msg.level, msg.text, msg.activity);
+            match activity {
+                super::types::Activity::ActCopyPath(package_name, store_path, from, to) => {
+                    let now = SystemTime::now();
+                    log::trace!(
+                        "id: {} -> activity: {} -> time {:?}",
+                        id,
+                        "ActCopyPath",
+                        now
+                    );
+                    let new_activity_state = ActivityState {
+                        activity: super::types::Activity::ActCopyPath(
+                            package_name.clone(),
+                            store_path.clone(),
+                            from,
+                            to,
+                        ),
+                        start: now,
+                        end: None,
+                        phase: None,
+                        progress: None,
+                        package_name: Some(package_name),
+                    };
+                    state.activity.insert(id, new_activity_state);
+                    let is_not_present = state.required_derivations.insert(store_path.clone());
+                    if is_not_present {
+                    } else {
+                        log::trace!("Duplicate derivation");
+                    }
+                }
+                super::types::Activity::ActFileTransfer(url) => {
+                    let now = SystemTime::now();
+                    log::trace!(
+                        "id: {} -> activity: {} -> time {:?}",
+                        id,
+                        "ActFileTransfer",
+                        now
+                    );
+                    let new_activity_state = ActivityState {
+                        activity: super::types::Activity::ActFileTransfer(url.clone()),
+                        start: now,
+                        end: None,
+                        phase: None,
+                        progress: None,
+                        package_name: None,
+                    };
+                    state.activity.insert(id, new_activity_state);
+                }
+                super::types::Activity::ActSubstitute(package_name, store_path, from) => {
+                    let now = SystemTime::now();
+                    log::trace!(
+                        "id: {} -> activity: {} -> time {:?}",
+                        id,
+                        "ActSubstitute",
+                        now
+                    );
+                    let new_activity_state = ActivityState {
+                        activity: super::types::Activity::ActSubstitute(
+                            package_name.clone(),
+                            store_path.clone(),
+                            from,
+                        ),
+                        start: now,
+                        end: None,
+                        phase: None,
+                        progress: None,
+                        package_name: Some(package_name),
+                    };
+                    state.activity.insert(id, new_activity_state);
+                    let is_not_present = state.required_derivations.insert(store_path.clone());
+                    if is_not_present {
+                    } else {
+                        log::trace!("Duplicate derivation");
+                    }
+                }
+                super::types::Activity::ActQueryPathInfo(package_name, store_path, from) => {
+                    let now = SystemTime::now();
+                    log::trace!(
+                        "id: {} -> activity: {} -> time {:?}",
+                        id,
+                        "ActQueryPathInfo",
+                        now
+                    );
+                    let new_activity_state = ActivityState {
+                        activity: super::types::Activity::ActSubstitute(
+                            package_name.clone(),
+                            store_path.clone(),
+                            from,
+                        ),
+                        start: now,
+                        end: None,
+                        phase: None,
+                        progress: None,
+                        package_name: Some(package_name),
+                    };
+                    state.activity.insert(id, new_activity_state);
+                    let is_not_present = state.required_derivations.insert(store_path.clone());
+                    if is_not_present {
+                    } else {
+                        log::trace!("Duplicate derivation");
+                    }
+                }
+                super::types::Activity::ActPostBuildHook(store_path) => {
+                    let now = SystemTime::now();
+                    log::trace!(
+                        "id: {} -> activity: {} -> time {:?}",
+                        id,
+                        "ActPostBuildHook",
+                        now
+                    );
+                    let new_activity_state = ActivityState {
+                        activity: super::types::Activity::ActPostBuildHook(store_path.clone()),
+                        start: now,
+                        end: None,
+                        phase: None,
+                        progress: None,
+                        package_name: None, 
+                    };
+                    state.activity.insert(id, new_activity_state);
+                    let is_not_present = state.required_derivations.insert(store_path.clone());
+                    if is_not_present {
+                    } else {
+                        log::trace!("Duplicate derivation");
+                    }
+                }
+                super::types::Activity::ActBuild(package_name, store_path, host, _, _) => {
+                    let now = SystemTime::now();
+                    log::trace!("id: {} -> activity: {} -> time {:?}", id, "ActBuild", now);
+                    let new_activity_state = ActivityState {
+                        activity: super::types::Activity::ActBuild(
+                            package_name.clone(),
+                            store_path.clone(),
+                            host,
+                            1,
+                            1,
+                        ),
+                        start: now,
+                        end: None,
+                        phase: None,
+                        progress: None,
+                        package_name: Some(package_name),
+                    };
+                    state.activity.insert(id, new_activity_state);
+                    let is_not_present = state.required_derivations.insert(store_path.clone());
+                    if is_not_present {
+                    } else {
+                        log::trace!("Duplicate derivation");
+                    }
+                }
+                act => {
+                    let now = SystemTime::now();
+                    let new_activity_state = ActivityState {
+                        activity: act,
+                        start: now,
+                        end: None,
+                        phase: None,
+                        progress: None,
+                        package_name: None,
+                    };
+                    state.activity.insert(id, new_activity_state);
+                } // super::types::Activity::ActCopyPaths => todo!()
+                  // super::types::Activity::ActBuilds => => todo!()
+                  // super::types::Activity::ActOptimiseStore => todo!(),
+                  // super::types::Activity::ActVerifyPaths => todo!(),
+                  // super::types::Activity::ActBuildWaiting => todo!(),
+                  // super::types::Activity::ActUnknown => todo!()
+            }
+        }
+        JSONMessage::Stop(act) => {
+            let end = SystemTime::now();
+            let id = &act.id;
+            match state.activity.get(id) {
+                Some(v) => {
+                    let v_updated = ActivityState {
+                        activity: v.activity.clone(),
+                        start: v.start,
+                        end: Some(end),
+                        phase: v.phase.clone(),
+                        progress: v.progress,
+                        package_name: v.package_name.clone(),
+                    };
+                    state.activity.insert(id.clone(), v_updated);
+                }
+                None => {
+                    log::trace!("id not found in the HM: {} -> Stop", id);
+                }
+            }
+        }
+        JSONMessage::Result(act) => match act.result {
+            super::types::ActivityResult::SetPhase(phase) => {
+                let id = &act.id;
+                match state.activity.get(id) {
+                    Some(v) => {
+                        let v_updated = ActivityState {
+                            activity: v.activity.clone(),
+                            start: v.start,
+                            end: v.end,
+                            phase: Some(phase),
+                            progress: v.progress,
+                            package_name:v.package_name.clone()
+                        };
+                        state.activity.insert(id.clone(), v_updated);
+                    }
+                    None => {
+                        log::trace!("id not found in the HM Result: {} -> {}", id,phase);
+                    }
+                }
+            },
+            super::types::ActivityResult::Progress(progress) => {
+                let id = &act.id;
+                match state.activity.get(id) {
+                    Some(v) => {
+                        let v_updated = ActivityState {
+                            activity: v.activity.clone(),
+                            start: v.start,
+                            end: v.end,
+                            phase: v.phase.to_owned(),
+                            progress: Some(progress),
+                            package_name:v.package_name.clone()
+                        };
+                        state.activity.insert(id.clone(), v_updated);
+                    }
+                    None => {
+                        log::trace!("id not found in the HM Progress: {} -> {:#?}", id,progress);
+                    }
+                }
+            },
+            super::types::ActivityResult::BuildLogLine(log) => {
+                let data_about_build = &state.activity.get(&id).unwrap().package_name;
+                let utf8_string = strip_ansi_escapes::strip_str(&log);
+                let mut pkg_name = match data_about_build {
+                    Some(p) => p.to_string(),
+                    None => "".to_string()
+                };
+                if pkg_name!= "" {
+                    pkg_name.push('>');
+                }
+                if utf8_string.contains("warning") {
+                    log::warn!("{} {}",Paint::green(&pkg_name),utf8_string);
+                }else if utf8_string.contains("error") {
+                    log::error!("{} {}",Paint::green(&pkg_name),utf8_string);
+                }else
+                {
+                    log::info!("{} {}",Paint::green(&pkg_name),utf8_string);
+                }
+            },
+            _ => {}
+            // super::types::ActivityResult::FileLinked(_, _) => todo!(),
+            // super::types::ActivityResult::UntrustedPath(_) => todo!(),
+            // super::types::ActivityResult::CorruptedPath(_) => todo!(),
+            // super::types::ActivityResult::SetExpected(_, _) => todo!(),
+            // super::types::ActivityResult::PostBuildLogLine(_) => todo!(),
+        },
+        JSONMessage::Message(act) => {
+            let no_package_name = &"".to_string();
+            let pkg_name: &mut String = &mut match state.activity.get(&id) {
+                Some(v) => match &v.package_name {
+                    Some(pkg_name) => pkg_name.to_string(),
+                    None => no_package_name.to_string(),
+                },
+                None => no_package_name.to_string(),
+            };
+            let (lvl, log) = (act.level.to_owned(), act.msg.to_owned());
+            let utf8_string = strip_ansi_escapes::strip_str(&log);
+            if pkg_name != no_package_name {
+                pkg_name.push('>');
+                let _ = match lvl {
+                    Verbosity::Error => log::error!("{} {}", Paint::green(pkg_name), utf8_string),
+                    Verbosity::Warn => log::warn!("{} {}", Paint::green(pkg_name), utf8_string),
+                    Verbosity::Notice => log::warn!("{} {}", Paint::green(pkg_name), utf8_string),
+                    Verbosity::Info => log::info!("{} {}", Paint::green(pkg_name), utf8_string),
+                    _ => log::trace!("{} {}", Paint::green(pkg_name), utf8_string),
+                };
+            } else {
+                let _ = match lvl {
+                    Verbosity::Error => log::error!("{}", utf8_string),
+                    Verbosity::Warn => log::warn!("{}", utf8_string),
+                    Verbosity::Notice => log::warn!("{}", utf8_string),
+                    Verbosity::Info => log::info!("{}", utf8_string),
+                    _ => log::trace!("{}", utf8_string),
+                };
+            }
+        }
+    }
+    state
+}
