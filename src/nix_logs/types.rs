@@ -1,11 +1,11 @@
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 
-#[derive(Debug, Eq, Serialize, PartialEq, Clone, Copy)]
+#[derive(Debug, Eq, Serialize,Deserialize, PartialEq, Clone, Copy)]
 pub struct StopAction {
     pub(crate) id: i64,
 }
 
-#[derive(Debug, Eq, Serialize, PartialEq, PartialOrd, Clone, Copy)]
+#[derive(Debug, Eq, Serialize,Deserialize, PartialEq, PartialOrd, Clone, Copy)]
 pub enum Verbosity {
     Error = 0,
     Warn,
@@ -17,7 +17,7 @@ pub enum Verbosity {
     Vomit,
 }
 
-#[derive(Debug, Eq, Serialize, PartialEq, Clone, Copy)]
+#[derive(Debug, Eq, Serialize,Deserialize, PartialEq, Clone, Copy)]
 pub enum ActivityType {
     ActUnknownType = 0,
     ActCopyPathType = 100,
@@ -34,7 +34,7 @@ pub enum ActivityType {
     ActBuildWaitingType = 111,
 }
 
-#[derive(Debug, Eq, Serialize, PartialEq, Clone, Copy)]
+#[derive(Debug, Eq, Serialize,Deserialize, PartialEq, Clone, Copy)]
 pub struct ActivityProgress {
     pub(crate) done: i64,
     pub(crate) expected: i64,
@@ -42,7 +42,7 @@ pub struct ActivityProgress {
     pub(crate) failed: i64,
 }
 
-#[derive(Debug, Eq, Serialize, PartialEq, Clone)]
+#[derive(Debug, Eq, Serialize,Deserialize, PartialEq, Clone)]
 pub struct StartAction {
     pub(crate) id: i64,
     pub(crate) level: Verbosity,
@@ -50,19 +50,19 @@ pub struct StartAction {
     pub(crate) activity: Activity,
 }
 
-#[derive(Debug, Eq, Serialize, PartialEq, Clone)]
+#[derive(Debug, Eq, Serialize,Deserialize, PartialEq, Clone)]
 pub struct ResultAction {
     pub(crate) id: i64,
     pub(crate) result: ActivityResult,
 }
 
-#[derive(Debug, Eq, Serialize, PartialEq, Clone)]
+#[derive(Debug, Eq, Serialize,Deserialize, PartialEq, Clone)]
 pub struct MessageAction {
     pub(crate) level: Verbosity,
     pub(crate) msg: String,
 }
 
-#[derive(Debug, Eq, Serialize, PartialEq, Clone)]
+#[derive(Debug, Eq, Serialize,Deserialize, PartialEq, Clone)]
 pub enum JSONMessage {
     Stop(StopAction),
     Start(StartAction),
@@ -70,7 +70,7 @@ pub enum JSONMessage {
     Message(MessageAction),
 }
 
-#[derive(Debug, Eq, Serialize, PartialEq, Clone)]
+#[derive(Debug, Eq, Serialize,Deserialize, PartialEq, Clone)]
 pub enum ActivityResult {
     FileLinked(i64, i64),
     BuildLogLine(String),
@@ -82,7 +82,7 @@ pub enum ActivityResult {
     PostBuildLogLine(String),
 }
 
-#[derive(Debug, Eq, Serialize, PartialEq, Clone)]
+#[derive(Debug, Eq, Serialize,Deserialize, PartialEq, Clone)]
 pub enum Activity {
     ActUnknown,
     ActCopyPath(String, String, String, String),

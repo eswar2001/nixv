@@ -45,43 +45,66 @@ fn number_to_activity_type(number: i64) -> ActivityType {
     }
 }
 
-fn str_to_activity_result(activity_result: i64, fields: Vec<Value>) -> ActivityResult {
+fn str_to_activity_result(activity_result: i64, fields: Value) -> ActivityResult {
     match activity_result {
-        100 => ActivityResult::FileLinked(fields[0].as_i64().unwrap(), fields[1].as_i64().unwrap()),
-        101 => ActivityResult::BuildLogLine(fields[0].to_string()),
-        102 => ActivityResult::UntrustedPath(fields[0].to_string()),
-        103 => ActivityResult::CorruptedPath(fields[0].to_string()),
-        104 => ActivityResult::SetPhase(fields[0].to_string()),
-        105 => ActivityResult::Progress(ActivityProgress {
-            done: fields[0].as_i64().unwrap(),
-            expected: fields[1].as_i64().unwrap(),
-            running: fields[2].as_i64().unwrap(),
-            failed: fields[3].as_i64().unwrap(),
-        }),
-        106 => ActivityResult::SetExpected(
-            number_to_activity_type(fields[0].as_i64().unwrap()),
-            fields[1].as_i64().unwrap(),
-        ),
-        107 => ActivityResult::PostBuildLogLine(fields[0].to_string()),
+        100 => {
+            let fields_i64: Vec<i64> = serde_json::from_value(fields).unwrap();
+            ActivityResult::FileLinked(fields_i64[0], fields_i64[1])
+        }
+        101 => {
+            let fields_str: Vec<String> = serde_json::from_value(fields).unwrap();
+            ActivityResult::BuildLogLine(fields_str[0].to_owned())
+        }
+        102 => {
+            let fields_str: Vec<String> = serde_json::from_value(fields).unwrap();
+            ActivityResult::UntrustedPath(fields_str[0].to_owned())
+        }
+        103 => {
+            let fields_str: Vec<String> = serde_json::from_value(fields).unwrap();
+            ActivityResult::CorruptedPath(fields_str[0].to_owned())
+        }
+        104 => {
+            let fields_str: Vec<String> = serde_json::from_value(fields).unwrap();
+            ActivityResult::SetPhase(fields_str[0].to_owned())
+        }
+        105 => {
+            let fields_i64: Vec<i64> = serde_json::from_value(fields).unwrap();
+            ActivityResult::Progress(ActivityProgress {
+                done: fields_i64[0],
+                expected: fields_i64[1],
+                running: fields_i64[2],
+                failed: fields_i64[3],
+            })
+        }
+        106 => {
+            let fields_i64: Vec<i64> = serde_json::from_value(fields).unwrap();
+            ActivityResult::SetExpected(number_to_activity_type(fields_i64[0]), fields_i64[1])
+        }
+        107 => {
+            let fields_str: Vec<String> = serde_json::from_value(fields).unwrap();
+            ActivityResult::PostBuildLogLine(fields_str[0].to_owned())
+        }
         x => panic!("unable to parse str_to_activity_result: {}", x),
     }
 }
 
-fn str_to_activity(activity: i64, fields: Vec<Value>) -> Activity {
+fn str_to_activity(activity: i64, fields: Value) -> Activity {
     match activity {
         // actUnknown = 0,
         0 => Activity::ActUnknown,
         // actCopyPath = 100,
         100 => {
-            let store_path = fields[0].as_str().unwrap();
-            let from = fields[1].to_string();
-            let to = fields[2].to_string();
+            let fields_str: Vec<String> = serde_json::from_value(fields).unwrap();
+            let store_path = fields_str[0].to_owned();
+            let from = fields_str[1].to_owned();
+            let to = fields_str[2].to_owned();
             let package_name = get_package_from_drv(store_path.to_owned());
-            Activity::ActCopyPath(package_name, store_path.to_string(), from, to)
+            Activity::ActCopyPath(package_name, store_path, from, to)
         }
         // actFileTransfer = 101,
         101 => {
-            let nar = fields[0].to_string();
+            let fields_str: Vec<String> = serde_json::from_value(fields).unwrap();
+            let nar = fields_str[0].to_owned();
             Activity::ActFileTransfer(nar)
         }
         // actRealise = 102,
@@ -92,8 +115,9 @@ fn str_to_activity(activity: i64, fields: Vec<Value>) -> Activity {
         104 => Activity::ActBuilds,
         // actBuild = 105,
         105 => {
-            let path = fields[0].to_string();
-            let host = fields[1].to_string();
+            let fields_str: Vec<Value> = serde_json::from_value(fields).unwrap();
+            let path: String = serde_json::from_value(fields_str[0].to_owned()).unwrap();
+            let host: String = serde_json::from_value(fields_str[1].to_owned()).unwrap();
             let package_name = get_package_from_drv(path.clone());
             Activity::ActBuild(package_name, path, host, 1, 1)
         }
@@ -103,20 +127,25 @@ fn str_to_activity(activity: i64, fields: Vec<Value>) -> Activity {
         107 => Activity::ActVerifyPaths,
         // actSubstitute = 108,
         108 => {
-            let path = fields[0].to_string();
-            let host = fields[1].to_string();
+            let fields_str: Vec<String> = serde_json::from_value(fields).unwrap();
+            let path = fields_str[0].to_owned();
+            let host = fields_str[1].to_owned();
             let package_name = get_package_from_drv(path.clone());
             Activity::ActSubstitute(package_name, path, host)
         }
         // actQueryPathInfo = 109,
         109 => {
-            let path = fields[0].to_string();
-            let host = fields[1].to_string();
+            let fields_str: Vec<String> = serde_json::from_value(fields).unwrap();
+            let path = fields_str[0].to_owned();
+            let host = fields_str[1].to_owned();
             let package_name = get_package_from_drv(path.clone());
             Activity::ActQueryPathInfo(package_name, path, host)
         }
         // actPostBuildHook = 110,
-        110 => Activity::ActPostBuildHook(fields[0].to_string()),
+        110 => {
+            let fields_str: Vec<String> = serde_json::from_value(fields).unwrap();
+            Activity::ActPostBuildHook(fields_str[0].to_owned())
+        }
         // actBuildWaiting = 111,
         111 => Activity::ActBuildWaiting,
         _ => panic!("Invalid Activity"),
@@ -126,18 +155,21 @@ fn str_to_activity(activity: i64, fields: Vec<Value>) -> Activity {
 pub fn parse(line: String) -> (Option<JSONMessage>, i64) {
     let res: serde_json::Value = serde_json::from_str(&line.replace("@nix ", "")).unwrap();
     let action = res.get("action").unwrap().as_str();
+    let d_fields = Value::Array([].to_vec());
     let mut id = -1;
     let msg = match action {
         Some("start") => {
-            id = res.get("id").unwrap().as_i64().unwrap();
+            id = serde_json::from_value(res.get("id").unwrap().to_owned()).unwrap();
             let fields = match res.get("fields") {
-                Some(v) => v.as_array().unwrap().clone(),
-                None => Vec::new(),
+                Some(v) => v,
+                None => &d_fields,
             };
-            let level = str_to_verbosity(res.get("level").unwrap().as_i64().unwrap());
-            let text = serde_json::from_value(res.get("text").unwrap().clone()).unwrap();
-            let _type = res.get("type").unwrap().as_i64().unwrap();
-            let activity = str_to_activity(_type, fields);
+            let level = str_to_verbosity(
+                serde_json::from_value(res.get("level").unwrap().to_owned()).unwrap(),
+            );
+            let text = serde_json::from_value(res.get("text").unwrap().to_owned()).unwrap();
+            let _type = serde_json::from_value(res.get("type").unwrap().to_owned()).unwrap();
+            let activity = str_to_activity(_type, fields.clone());
             Some(JSONMessage::Start(StartAction {
                 id: id,
                 level: level,
@@ -146,21 +178,25 @@ pub fn parse(line: String) -> (Option<JSONMessage>, i64) {
             }))
         }
         Some("stop") => {
-            id = res.get("id").unwrap().as_i64().unwrap();
+            id = serde_json::from_value(res.get("id").unwrap().to_owned()).unwrap();
             Some(JSONMessage::Stop(StopAction { id: id }))
         }
         Some("result") => {
-            id = res.get("id").unwrap().as_i64().unwrap();
-            let fields = res.get("fields").unwrap().as_array().unwrap().clone();
-            let activity =
-                str_to_activity_result(res.get("type").unwrap().as_i64().unwrap(), fields);
+            id = serde_json::from_value(res.get("id").unwrap().to_owned()).unwrap();
+            let fields = res.get("fields").unwrap();
+            let activity = str_to_activity_result(
+                serde_json::from_value(res.get("type").unwrap().to_owned()).unwrap(),
+                fields.clone(),
+            );
             Some(JSONMessage::Result(ResultAction {
                 id: id,
                 result: activity,
             }))
         }
         Some("msg") => {
-            let level = str_to_verbosity(res.get("level").unwrap().as_i64().unwrap());
+            let level = str_to_verbosity(
+                serde_json::from_value(res.get("level").unwrap().to_owned()).unwrap(),
+            );
             let msg = serde_json::from_value(res.get("msg").unwrap().clone()).unwrap();
             Some(JSONMessage::Message(MessageAction {
                 level: level,
