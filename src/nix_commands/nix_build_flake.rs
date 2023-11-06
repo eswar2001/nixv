@@ -72,7 +72,14 @@ fn append_log_to_file(file_name: String, msg: Option<JSONMessage>) {
 
 fn dump_state_to_file(state: CommandState) {
     let now: DateTime<Utc> = Utc::now();
-    println!("UTC now is: {}", now);
+    println!(
+        "Time take to build: {:?}",
+        state
+            .end
+            .unwrap() 
+            .duration_since(state.start)
+            .expect("Clock may have gone backwards")
+    );
     let mut file = File::create("command_state_".to_owned() + &now.to_rfc3339() + ".json").unwrap();
     let json_dump = serde_json::to_string_pretty(&state).unwrap();
     let _ = file.write_all(json_dump.as_bytes());
