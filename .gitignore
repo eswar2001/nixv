@@ -2,4 +2,4 @@
 result
 test
 .vscode
-_id.json
+*.log

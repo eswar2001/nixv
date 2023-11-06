@@ -1,3 +1,10 @@
+use crate::nix_tracker::types::CommandState;
+use chrono::{DateTime, Utc};
+use std::{
+    env,
+    fs::{File, OpenOptions},
+    io::Write,
+};
 use yansi::Painted;
 
 pub fn filter_ansi(mut utf8_string: String) -> Painted<std::string::String> {
@@ -573,4 +580,38 @@ pub fn filter_ansi(mut utf8_string: String) -> Painted<std::string::String> {
         utf8_string = utf8_string.replace(i, "");
     }
     Painted::new(utf8_string)
+}
+
+pub fn append_log_to_file(file_name: String, msg: String) {
+    let append = match env::var("DUMP_LOGS") {
+        Ok(value) => value.parse().unwrap_or_default(),
+        Err(_) => false,
+    };
+    if append {
+        let mut file = OpenOptions::new()
+            .write(true)
+            .append(true)
+            .create(true)
+            .open(file_name + ".log")
+            .unwrap();
+
+        if let Err(e) = writeln!(file, "{}", msg) {
+            eprintln!("Couldn't write to file: {}", e);
+        }
+    }
+}
+
+pub fn dump_state_to_file(state: CommandState) {
+    let now: DateTime<Utc> = Utc::now();
+    println!(
+        "time take run the command: {:?}",
+        state
+            .end
+            .unwrap()
+            .duration_since(state.start)
+            .expect("Clock may have gone backwards")
+    );
+    let mut file = File::create("command_state_".to_owned() + &now.to_rfc3339() + ".json").unwrap();
+    let json_dump = serde_json::to_string_pretty(&state).unwrap();
+    let _ = file.write_all(json_dump.as_bytes());
 }

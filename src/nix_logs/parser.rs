@@ -1,4 +1,6 @@
-use super::types::*;
+use std::thread;
+
+use super::{helpers::append_log_to_file, types::*};
 use serde_json::{self, Value};
 
 fn get_package_from_drv(store_path: String) -> String {
@@ -167,27 +169,60 @@ pub fn parse(line: String) -> (Option<JSONMessage>, i64) {
             let level = str_to_verbosity(
                 serde_json::from_value(res.get("level").unwrap().to_owned()).unwrap(),
             );
-            let text = serde_json::from_value(res.get("text").unwrap().to_owned()).unwrap();
+            let text: String = serde_json::from_value(res.get("text").unwrap().to_owned()).unwrap();
+            let text_log: String = text.clone();
             let _type = serde_json::from_value(res.get("type").unwrap().to_owned()).unwrap();
             let activity = str_to_activity(_type, fields.clone());
+
+            //write to log file
+            thread::spawn(move || {
+                let log_file = "id_".to_owned() + &(id.clone().to_string());
+                append_log_to_file(log_file, text_log.to_owned());
+            });
+
             Some(JSONMessage::Start(StartAction {
                 id: id,
                 level: level,
                 activity: activity,
-                text: text,
+                text: text.to_owned(),
             }))
         }
         Some("stop") => {
             id = serde_json::from_value(res.get("id").unwrap().to_owned()).unwrap();
+            thread::spawn(move || {
+                let log_file = "id_".to_owned() + &(id.clone().to_string());
+                append_log_to_file(log_file, String::from("done"));
+            });
             Some(JSONMessage::Stop(StopAction { id: id }))
         }
         Some("result") => {
             id = serde_json::from_value(res.get("id").unwrap().to_owned()).unwrap();
             let fields = res.get("fields").unwrap();
-            let activity = str_to_activity_result(
+            let activity: ActivityResult = str_to_activity_result(
                 serde_json::from_value(res.get("type").unwrap().to_owned()).unwrap(),
                 fields.clone(),
             );
+            let text: Option<String> = match activity.clone() {
+                ActivityResult::BuildLogLine(msg) => Some(String::from(msg)),
+                ActivityResult::UntrustedPath(msg) => Some(String::from(msg)),
+                ActivityResult::CorruptedPath(msg) => Some(String::from(msg)),
+                ActivityResult::SetPhase(msg) => Some(String::from(msg)),
+                _ => None
+                // ActivityResult::Progress(msg) => Some(),
+                // ActivityResult::FileLinked(_, _) => Some(String::from("")),
+                // ActivityResult::SetExpected(_, _) => Some(String::from("")),
+                // ActivityResult::PostBuildLogLine(_) => Some(String::from("")),
+            };
+            match text {
+                Some(msg) => {
+                    thread::spawn(move || {
+                        let log_file = "id_".to_owned() + &(id.clone().to_string());
+                        append_log_to_file(log_file, msg.clone());
+                    });
+                    ()
+                }
+                None => (),
+            }
             Some(JSONMessage::Result(ResultAction {
                 id: id,
                 result: activity,
@@ -197,10 +232,18 @@ pub fn parse(line: String) -> (Option<JSONMessage>, i64) {
             let level = str_to_verbosity(
                 serde_json::from_value(res.get("level").unwrap().to_owned()).unwrap(),
             );
-            let msg = serde_json::from_value(res.get("msg").unwrap().clone()).unwrap();
+            let msg: String = serde_json::from_value(res.get("msg").unwrap().clone()).unwrap();
+            let msg_log: String = serde_json::from_value(res.get("msg").unwrap().clone()).unwrap();
+
+            //write to log file
+            thread::spawn(move || {
+                let log_file = "id_".to_owned() + &(id.clone().to_string());
+                append_log_to_file(log_file, msg_log.to_owned());
+            });
+
             Some(JSONMessage::Message(MessageAction {
                 level: level,
-                msg: msg,
+                msg: msg.to_owned(),
             }))
         }
         Some(l) => {

@@ -1,8 +1,11 @@
 extern crate nixv;
 use clap::{self};
 use nixv::nix_commands::nix_build_flake::*;
-use nixv::nix_commands::nix_develop_flake::nix_develop_flake_sub_command;
+use nixv::nix_commands::nix_develop_flake::{
+    nix_develop_flake_process, nix_develop_flake_sub_command,
+};
 use nixv::nix_logs::helpers::filter_ansi;
+use std::process::{self as PC, Stdio};
 use yansi::Paint;
 
 fn main() {
@@ -41,6 +44,19 @@ fn main() {
         }
         ("develop", args) => {
             println!("{:#?}", args);
+            let _ = nix_develop_flake_process(&args);
+            // To get into interactive shell
+            let shell = "/bin/bash";
+            let nix_develop_command = format!("nix develop --command {}", shell);
+            let mut shell = PC::Command::new("nix-shell");
+            shell
+                .arg("--command")
+                .arg(&nix_develop_command)
+                .stdin(Stdio::inherit())
+                .stdout(Stdio::inherit())
+                .stderr(Stdio::inherit())
+                .status()
+                .expect("Failed to execute 'nix develop'");
         }
         (subcommand, _) => {
             println!("{} is invalid subcommand", subcommand);

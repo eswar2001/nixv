@@ -15,14 +15,25 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build
-      run: cargo build --verbose --release
+      run: cargo build --release
     - name: Run tests
-      run: cargo test --verbose --release
+      run: cargo test --release
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: target
+        path: target/release
+
   build-mac:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v3
     - name: Build
-      run: cargo build --verbose --release
+      run: cargo build --release
     - name: Run tests
-      run: cargo test --verbose --release
+      run: cargo test --release
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: target
+        path: target/release
