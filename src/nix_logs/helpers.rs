@@ -4,8 +4,9 @@ use std::{
     env,
     fs::{File, OpenOptions},
     io::Write,
+    thread,
 };
-use yansi::Painted;
+use yansi::{Paint, Painted};
 
 pub fn filter_ansi(mut utf8_string: String) -> Painted<std::string::String> {
     let filter_from_string = [
@@ -604,7 +605,7 @@ pub fn append_log_to_file(file_name: String, msg: String) {
 pub fn dump_state_to_file(state: CommandState) {
     let now: DateTime<Utc> = Utc::now();
     println!(
-        "time take run the command: {:?}",
+        "time taken to run the command: {:?}",
         state
             .end
             .unwrap()
@@ -614,4 +615,25 @@ pub fn dump_state_to_file(state: CommandState) {
     let mut file = File::create("command_state_".to_owned() + &now.to_rfc3339() + ".json").unwrap();
     let json_dump = serde_json::to_string_pretty(&state).unwrap();
     let _ = file.write_all(json_dump.as_bytes());
+}
+
+pub fn log_async(record: &log::Record<'_>) {
+    let str = record.args().to_string();
+    match record.level() {
+        log::Level::Error => {
+            thread::spawn(move || println!("{}", Paint::red(&filter_ansi(str))));
+        }
+        log::Level::Warn => {
+            thread::spawn(move || println!("{}", Paint::magenta(&filter_ansi(str))));
+        }
+        log::Level::Info => {
+            thread::spawn(move || println!("{}", Paint::white(&filter_ansi(str))));
+        }
+        log::Level::Debug => {
+            thread::spawn(move || println!("{}", Paint::bright_yellow(&filter_ansi(str))));
+        }
+        log::Level::Trace => {
+            thread::spawn(move || println!("{}", Paint::blue(&filter_ansi(str))));
+        }
+    }
 }

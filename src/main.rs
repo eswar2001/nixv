@@ -4,32 +4,30 @@ use nixv::nix_commands::nix_build_flake::*;
 use nixv::nix_commands::nix_develop_flake::{
     nix_develop_flake_process, nix_develop_flake_sub_command,
 };
-use nixv::nix_logs::helpers::filter_ansi;
+use nixv::nix_logs::helpers::log_async;
+use std::collections::HashMap;
+use std::env;
 use std::process::{self as PC, Stdio};
-use yansi::Paint;
 
 fn main() {
+    let mut log_level_map = HashMap::new();
+    log_level_map.insert("error", log::LevelFilter::Error);
+    log_level_map.insert("warn", log::LevelFilter::Warn);
+    log_level_map.insert("info", log::LevelFilter::Info);
+    log_level_map.insert("debug", log::LevelFilter::Debug);
+    log_level_map.insert("trace", log::LevelFilter::Trace);
+    let log_level = match env::var("RUST_LOG") {
+        Ok(v) => log_level_map
+            .get(v.as_str())
+            .copied()
+            .unwrap_or(log::LevelFilter::Info),
+        Err(_) => log::LevelFilter::Info,
+    };
     env_logger::builder()
-        .format(|_buf, record| {
+        .filter_level(log_level)
+        .format(|_buf, record| -> Result<(), std::io::Error> {
             Ok({
-                let str = record.args().to_string();
-                match record.level() {
-                    log::Level::Error => {
-                        println!("{}", Paint::red(&filter_ansi(str)),)
-                    }
-                    log::Level::Warn => {
-                        println!("{}", Paint::magenta(&filter_ansi(str)),)
-                    }
-                    log::Level::Info => {
-                        println!("{}", Paint::white(&filter_ansi(str)),)
-                    }
-                    log::Level::Debug => {
-                        println!("{}", Paint::bright_yellow(&filter_ansi(str)),)
-                    }
-                    log::Level::Trace => {
-                        println!("{}", Paint::blue(&filter_ansi(str)),)
-                    }
-                }
+                log_async(record);
             })
         })
         .init();
@@ -43,7 +41,6 @@ fn main() {
             let _ = nix_build_flake_process(&args);
         }
         ("develop", args) => {
-            println!("{:#?}", args);
             let _ = nix_develop_flake_process(&args);
             // To get into interactive shell
             let shell = "/bin/bash";

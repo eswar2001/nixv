@@ -18,3 +18,14 @@ strip-ansi-escapes = "0.2.0"
 use = "0.0.0"
 yansi = "1.0.0-gamma"
 chrono = "0.4.31"
+
+[profile.release]
+opt-level = 3
+debug = false
+debug-assertions = false
+overflow-checks = false
+lto = false
+panic = 'unwind'
+incremental = false
+codegen-units = 16
+rpath = false
