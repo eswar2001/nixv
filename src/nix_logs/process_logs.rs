@@ -10,12 +10,8 @@ pub fn process_log(
     opt_msg: Option<JSONMessage>,
     state: &mut CommandState,
 ) -> &mut CommandState {
-    let msg = match opt_msg {
-        Some(v) => v,
-        None => panic!("parse failed"),
-    };
-    match msg {
-        JSONMessage::Start(msg) => {
+    match opt_msg {
+        Some(JSONMessage::Start(msg)) => {
             let (id, _level, _text, activity) = (msg.id, msg.level, msg.text, msg.activity);
             match activity {
                 super::types::Activity::ActCopyPath(package_name, store_path, from, to) => {
@@ -164,7 +160,7 @@ pub fn process_log(
                   // super::types::Activity::ActUnknown => todo!()
             }
         }
-        JSONMessage::Stop(act) => {
+        Some(JSONMessage::Stop(act)) => {
             let end = SystemTime::now();
             let id = &act.id;
             match state.activity.get(id) {
@@ -184,7 +180,7 @@ pub fn process_log(
                 }
             }
         }
-        JSONMessage::Result(act) => match act.result {
+        Some(JSONMessage::Result(act)) => match act.result {
             super::types::ActivityResult::SetPhase(phase) => {
                 let id = &act.id;
                 match state.activity.get(id) {
@@ -257,7 +253,7 @@ pub fn process_log(
                     //     log::trace!("SetExpected: {:?} && {}", activity, i);
                     // }
         },
-        JSONMessage::Message(act) => {
+        Some(JSONMessage::Message(act)) => {
             let no_package_name = &"".to_string();
             let pkg_name: &mut String = &mut match state.activity.get(&id) {
                 Some(v) => match &v.package_name {
@@ -287,6 +283,7 @@ pub fn process_log(
                 };
             }
         }
+        None => {}
     }
     state
 }

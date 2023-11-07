@@ -155,54 +155,58 @@ fn str_to_activity(activity: i64, fields: Value) -> Activity {
 }
 
 pub fn parse(line: String) -> (Option<JSONMessage>, i64) {
-    let res: serde_json::Value = serde_json::from_str(&line.replace("@nix ", "")).unwrap();
-    let action = res.get("action").unwrap().as_str();
-    let d_fields = Value::Array([].to_vec());
-    let mut id = -1;
-    let msg = match action {
-        Some("start") => {
-            id = serde_json::from_value(res.get("id").unwrap().to_owned()).unwrap();
-            let fields = match res.get("fields") {
-                Some(v) => v,
-                None => &d_fields,
-            };
-            let level = str_to_verbosity(
-                serde_json::from_value(res.get("level").unwrap().to_owned()).unwrap(),
-            );
-            let text: String = serde_json::from_value(res.get("text").unwrap().to_owned()).unwrap();
-            let text_log: String = text.clone();
-            let _type = serde_json::from_value(res.get("type").unwrap().to_owned()).unwrap();
-            let activity = str_to_activity(_type, fields.clone());
+    let opt_res: Result<serde_json::Value, _> = serde_json::from_str(&line.replace("@nix ", ""));
+    match opt_res {
+        Ok(res) => {
+            let action = res.get("action").unwrap().as_str();
+            let d_fields = Value::Array([].to_vec());
+            let mut id = -1;
+            let msg = match action {
+                Some("start") => {
+                    id = serde_json::from_value(res.get("id").unwrap().to_owned()).unwrap();
+                    let fields = match res.get("fields") {
+                        Some(v) => v,
+                        None => &d_fields,
+                    };
+                    let level = str_to_verbosity(
+                        serde_json::from_value(res.get("level").unwrap().to_owned()).unwrap(),
+                    );
+                    let text: String =
+                        serde_json::from_value(res.get("text").unwrap().to_owned()).unwrap();
+                    let text_log: String = text.clone();
+                    let _type =
+                        serde_json::from_value(res.get("type").unwrap().to_owned()).unwrap();
+                    let activity = str_to_activity(_type, fields.clone());
 
-            //write to log file
-            thread::spawn(move || {
-                let log_file = "id_".to_owned() + &(id.clone().to_string());
-                append_log_to_file(log_file, text_log.to_owned());
-            });
+                    //write to log file
+                    thread::spawn(move || {
+                        let log_file = "id_".to_owned() + &(id.clone().to_string());
+                        append_log_to_file(log_file, text_log.to_owned());
+                    });
 
-            Some(JSONMessage::Start(StartAction {
-                id,
-                level,
-                activity,
-                text: text.to_owned(),
-            }))
-        }
-        Some("stop") => {
-            id = serde_json::from_value(res.get("id").unwrap().to_owned()).unwrap();
-            thread::spawn(move || {
-                let log_file = "id_".to_owned() + &(id.clone().to_string());
-                append_log_to_file(log_file, String::from("done"));
-            });
-            Some(JSONMessage::Stop(StopAction { id }))
-        }
-        Some("result") => {
-            id = serde_json::from_value(res.get("id").unwrap().to_owned()).unwrap();
-            let fields = res.get("fields").unwrap();
-            let activity: ActivityResult = str_to_activity_result(
-                serde_json::from_value(res.get("type").unwrap().to_owned()).unwrap(),
-                fields.clone(),
-            );
-            let text: Option<String> = match activity.clone() {
+                    Some(JSONMessage::Start(StartAction {
+                        id,
+                        level,
+                        activity,
+                        text: text.to_owned(),
+                    }))
+                }
+                Some("stop") => {
+                    id = serde_json::from_value(res.get("id").unwrap().to_owned()).unwrap();
+                    thread::spawn(move || {
+                        let log_file = "id_".to_owned() + &(id.clone().to_string());
+                        append_log_to_file(log_file, String::from("done"));
+                    });
+                    Some(JSONMessage::Stop(StopAction { id }))
+                }
+                Some("result") => {
+                    id = serde_json::from_value(res.get("id").unwrap().to_owned()).unwrap();
+                    let fields = res.get("fields").unwrap();
+                    let activity: ActivityResult = str_to_activity_result(
+                        serde_json::from_value(res.get("type").unwrap().to_owned()).unwrap(),
+                        fields.clone(),
+                    );
+                    let text: Option<String> = match activity.clone() {
                 ActivityResult::BuildLogLine(msg) => Some(msg),
                 ActivityResult::UntrustedPath(msg) => Some(msg),
                 ActivityResult::CorruptedPath(msg) => Some(msg),
@@ -213,43 +217,51 @@ pub fn parse(line: String) -> (Option<JSONMessage>, i64) {
                 // ActivityResult::SetExpected(_, _) => Some(String::from("")),
                 // ActivityResult::PostBuildLogLine(_) => Some(String::from("")),
             };
-            match text {
-                Some(msg) => {
+                    match text {
+                        Some(msg) => {
+                            thread::spawn(move || {
+                                let log_file = "id_".to_owned() + &(id.clone().to_string());
+                                append_log_to_file(log_file, msg.clone());
+                            });
+                        }
+                        None => (),
+                    }
+                    Some(JSONMessage::Result(ResultAction {
+                        id,
+                        result: activity,
+                    }))
+                }
+                Some("msg") => {
+                    let level = str_to_verbosity(
+                        serde_json::from_value(res.get("level").unwrap().to_owned()).unwrap(),
+                    );
+                    let msg: String =
+                        serde_json::from_value(res.get("msg").unwrap().clone()).unwrap();
+                    let msg_log: String =
+                        serde_json::from_value(res.get("msg").unwrap().clone()).unwrap();
+
+                    //write to log file
                     thread::spawn(move || {
                         let log_file = "id_".to_owned() + &(id.clone().to_string());
-                        append_log_to_file(log_file, msg.clone());
+                        append_log_to_file(log_file, msg_log.to_owned());
                     });
+
+                    Some(JSONMessage::Message(MessageAction {
+                        level,
+                        msg: msg.to_owned(),
+                    }))
                 }
-                None => (),
-            }
-            Some(JSONMessage::Result(ResultAction {
-                id,
-                result: activity,
-            }))
+                Some(l) => {
+                    println!("Missed to handle: {:#?} , json: {:#?}", l, res);
+                    None
+                }
+                None => None,
+            };
+            (msg, id)
         }
-        Some("msg") => {
-            let level = str_to_verbosity(
-                serde_json::from_value(res.get("level").unwrap().to_owned()).unwrap(),
-            );
-            let msg: String = serde_json::from_value(res.get("msg").unwrap().clone()).unwrap();
-            let msg_log: String = serde_json::from_value(res.get("msg").unwrap().clone()).unwrap();
-
-            //write to log file
-            thread::spawn(move || {
-                let log_file = "id_".to_owned() + &(id.clone().to_string());
-                append_log_to_file(log_file, msg_log.to_owned());
-            });
-
-            Some(JSONMessage::Message(MessageAction {
-                level,
-                msg: msg.to_owned(),
-            }))
+        Err(err) => {
+            log::error!("Failed to parse: {} -> {}", line, err);
+            (None, -1)
         }
-        Some(l) => {
-            println!("Missed to handle: {:#?} , json: {:#?}", l, res);
-            None
-        }
-        None => None,
-    };
-    (msg, id)
+    }
 }
