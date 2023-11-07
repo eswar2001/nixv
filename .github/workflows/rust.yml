@@ -22,7 +22,10 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: nixv-ubuntu
-          path: target/release/
+          path: |
+            target/release/nixv
+            target/release/nixv-shell
+            target/release/nixv-build
       - uses: cachix/install-nix-action@v20
         with:
           nix_path: nixpkgs=channel:nixos-unstable
@@ -41,7 +44,10 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: nixv-macos
-          path: target/release/
+          path: |
+            target/release/nixv
+            target/release/nixv-shell
+            target/release/nixv-build
       - uses: cachix/install-nix-action@v20
         with:
           nix_path: nixpkgs=channel:nixos-unstable
