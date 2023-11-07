@@ -15,7 +15,7 @@ pub struct ActivityState {
     pub end: Option<SystemTime>,
     pub phase: Option<String>,
     pub progress: Option<ActivityProgress>,
-    pub package_name: Option<String>
+    pub package_name: Option<String>,
 }
 
 #[derive(Debug, Serialize)]

@@ -8,7 +8,6 @@ use std::{
     time::SystemTime,
 };
 
-
 pub fn nix_build_flake_process(args: Vec<String>) -> Result<(), Error> {
     let mut binding = PC::Command::new("nix");
     let cmd = binding
@@ -16,6 +15,10 @@ pub fn nix_build_flake_process(args: Vec<String>) -> Result<(), Error> {
         .arg("-v")
         .arg("--log-format")
         .arg("internal-json")
+        .arg("--extra-experimental-features")
+        .arg("flakes")
+        .arg("--extra-experimental-features")
+        .arg("nix-command")
         .args(args)
         .stderr(Stdio::piped())
         .stdout(Stdio::piped());

@@ -34,11 +34,11 @@ fn main() {
     let default = &String::from("");
     match args.split_first() {
         Some((x, xs)) => {
-            let command = x.split("/").last().unwrap_or(default);
+            let command = x.split('/').last().unwrap_or(default);
             match command {
                 "nixv" => {
                     let (subcommand, xargs) = xs.split_first().unwrap_or((default, &[]));
-                    let _ = match subcommand.as_str() {
+                    match subcommand.as_str() {
                         "develop" => {
                             let _ = nix_develop_flake_process(xargs.to_vec().to_owned());
                             let shell = "/bin/bash";

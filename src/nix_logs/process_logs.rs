@@ -177,7 +177,7 @@ pub fn process_log(
                         progress: v.progress,
                         package_name: v.package_name.clone(),
                     };
-                    state.activity.insert(id.clone(), v_updated);
+                    state.activity.insert(*id, v_updated);
                 }
                 None => {
                     log::trace!("id not found in the HM: {} -> Stop", id);
@@ -197,7 +197,7 @@ pub fn process_log(
                             progress: v.progress,
                             package_name: v.package_name.clone(),
                         };
-                        state.activity.insert(id.clone(), v_updated);
+                        state.activity.insert(*id, v_updated);
                     }
                     None => {
                         log::trace!("id not found in the HM Result: {} -> {}", id, phase);
@@ -216,7 +216,7 @@ pub fn process_log(
                             progress: Some(progress),
                             package_name: v.package_name.clone(),
                         };
-                        state.activity.insert(id.clone(), v_updated);
+                        state.activity.insert(*id, v_updated);
                     }
                     None => {
                         log::trace!("id not found in the HM Progress: {} -> {:#?}", id, progress);
@@ -225,12 +225,12 @@ pub fn process_log(
             }
             super::types::ActivityResult::BuildLogLine(log) => {
                 let data_about_build = &state.activity.get(&id).unwrap().package_name;
-                let utf8_string = strip_ansi_escapes::strip_str(&log);
+                let utf8_string = strip_ansi_escapes::strip_str(log);
                 let mut pkg_name = match data_about_build {
                     Some(p) => p.to_string(),
                     None => "".to_string(),
                 };
-                if pkg_name != "" {
+                if !pkg_name.is_empty() {
                     pkg_name.push('>');
                 }
                 if utf8_string.contains("warning") {
@@ -267,10 +267,10 @@ pub fn process_log(
                 None => no_package_name.to_string(),
             };
             let (lvl, log) = (act.level.to_owned(), act.msg.to_owned());
-            let utf8_string = strip_ansi_escapes::strip_str(&log);
+            let utf8_string = strip_ansi_escapes::strip_str(log);
             if pkg_name != no_package_name {
                 pkg_name.push('>');
-                let _ = match lvl {
+                match lvl {
                     Verbosity::Error => log::error!("{} {}", Paint::green(pkg_name), utf8_string),
                     Verbosity::Warn => log::warn!("{} {}", Paint::green(pkg_name), utf8_string),
                     Verbosity::Notice => log::warn!("{} {}", Paint::green(pkg_name), utf8_string),
@@ -278,7 +278,7 @@ pub fn process_log(
                     _ => log::trace!("{} {}", Paint::green(pkg_name), utf8_string),
                 };
             } else {
-                let _ = match lvl {
+                match lvl {
                     Verbosity::Error => log::error!("{}", utf8_string),
                     Verbosity::Warn => log::warn!("{}", utf8_string),
                     Verbosity::Notice => log::warn!("{}", utf8_string),

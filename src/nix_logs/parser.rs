@@ -9,7 +9,7 @@ fn get_package_from_drv(store_path: String) -> String {
             .to_owned()
             .replace(".drv", "")
             .replace("\\\"", "")
-            .replace("\"", ""),
+            .replace('\"', ""),
         None => store_path,
     }
 }
@@ -181,9 +181,9 @@ pub fn parse(line: String) -> (Option<JSONMessage>, i64) {
             });
 
             Some(JSONMessage::Start(StartAction {
-                id: id,
-                level: level,
-                activity: activity,
+                id,
+                level,
+                activity,
                 text: text.to_owned(),
             }))
         }
@@ -193,7 +193,7 @@ pub fn parse(line: String) -> (Option<JSONMessage>, i64) {
                 let log_file = "id_".to_owned() + &(id.clone().to_string());
                 append_log_to_file(log_file, String::from("done"));
             });
-            Some(JSONMessage::Stop(StopAction { id: id }))
+            Some(JSONMessage::Stop(StopAction { id }))
         }
         Some("result") => {
             id = serde_json::from_value(res.get("id").unwrap().to_owned()).unwrap();
@@ -203,10 +203,10 @@ pub fn parse(line: String) -> (Option<JSONMessage>, i64) {
                 fields.clone(),
             );
             let text: Option<String> = match activity.clone() {
-                ActivityResult::BuildLogLine(msg) => Some(String::from(msg)),
-                ActivityResult::UntrustedPath(msg) => Some(String::from(msg)),
-                ActivityResult::CorruptedPath(msg) => Some(String::from(msg)),
-                ActivityResult::SetPhase(msg) => Some(String::from(msg)),
+                ActivityResult::BuildLogLine(msg) => Some(msg),
+                ActivityResult::UntrustedPath(msg) => Some(msg),
+                ActivityResult::CorruptedPath(msg) => Some(msg),
+                ActivityResult::SetPhase(msg) => Some(msg),
                 _ => None
                 // ActivityResult::Progress(msg) => Some(),
                 // ActivityResult::FileLinked(_, _) => Some(String::from("")),
@@ -219,12 +219,11 @@ pub fn parse(line: String) -> (Option<JSONMessage>, i64) {
                         let log_file = "id_".to_owned() + &(id.clone().to_string());
                         append_log_to_file(log_file, msg.clone());
                     });
-                    ()
                 }
                 None => (),
             }
             Some(JSONMessage::Result(ResultAction {
-                id: id,
+                id,
                 result: activity,
             }))
         }
@@ -242,7 +241,7 @@ pub fn parse(line: String) -> (Option<JSONMessage>, i64) {
             });
 
             Some(JSONMessage::Message(MessageAction {
-                level: level,
+                level,
                 msg: msg.to_owned(),
             }))
         }
