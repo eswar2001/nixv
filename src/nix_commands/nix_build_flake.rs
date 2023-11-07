@@ -1,33 +1,22 @@
 use crate::{
-    nix_args::common_args::*,
-    nix_logs::{
-        helpers::dump_state_to_file,
-        parser::parse,
-        process_logs::process_log,
-    },
+    nix_logs::{helpers::dump_state_to_file, parser::parse, process_logs::process_log},
     nix_tracker::types::CommandState,
 };
-use clap::{ArgMatches, Command};
 use std::{
     io::{BufRead, BufReader, Error, ErrorKind},
     process::{self as PC, Stdio},
     time::SystemTime,
 };
 
-pub fn nix_build_flake_sub_command() -> Command {
-    Command::new("build")
-        .about("equivalent of nix build")
-        .arg(max_jobs())
-        .arg(cores())
-}
 
-pub fn nix_build_flake_process(_args: &ArgMatches) -> Result<(), Error> {
+pub fn nix_build_flake_process(args: Vec<String>) -> Result<(), Error> {
     let mut binding = PC::Command::new("nix");
     let cmd = binding
         .arg("build")
         .arg("-v")
         .arg("--log-format")
         .arg("internal-json")
+        .args(args)
         .stderr(Stdio::piped())
         .stdout(Stdio::piped());
     let p = cmd.spawn().expect("unable to run the command");

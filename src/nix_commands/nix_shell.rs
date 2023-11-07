@@ -8,18 +8,14 @@ use std::{
     time::SystemTime,
 };
 
-pub fn nix_develop_flake_process(args: Vec<String>) -> Result<(), Error> {
-    let mut binding = PC::Command::new("nix");
+pub fn nix_shell_process(args: Vec<String>) -> Result<(), Error> {
+    let mut binding = PC::Command::new("nix-shell");
     let cmd: &mut PC::Command = binding
-        .arg("develop")
         .arg("-v")
         .arg("--log-format")
         .arg("internal-json")
         .args(args)
-        .arg("--command")
-        .arg("bash")
-        .arg("-c")
-        .arg("exit")
+        .args(["--command", "bash -c exit"])
         .stderr(Stdio::piped())
         .stdout(Stdio::piped());
     let p = cmd.spawn().expect("unable to run the command");

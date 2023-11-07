@@ -8,18 +8,13 @@ use std::{
     time::SystemTime,
 };
 
-pub fn nix_develop_flake_process(args: Vec<String>) -> Result<(), Error> {
-    let mut binding = PC::Command::new("nix");
-    let cmd: &mut PC::Command = binding
-        .arg("develop")
+pub fn nix_build_process(args: Vec<String>) -> Result<(), Error> {
+    let mut binding = PC::Command::new("nix-build");
+    let cmd = binding
         .arg("-v")
         .arg("--log-format")
         .arg("internal-json")
         .args(args)
-        .arg("--command")
-        .arg("bash")
-        .arg("-c")
-        .arg("exit")
         .stderr(Stdio::piped())
         .stdout(Stdio::piped());
     let p = cmd.spawn().expect("unable to run the command");
@@ -30,6 +25,7 @@ pub fn nix_develop_flake_process(args: Vec<String>) -> Result<(), Error> {
     let stderr = p
         .stderr
         .ok_or_else(|| Error::new(ErrorKind::Other, "Could not capture standard output error."))?;
+
     let reader = BufReader::new(stderr);
     let mut state = CommandState::new();
     reader.lines().for_each(|l| match l {
