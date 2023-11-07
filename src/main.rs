@@ -3,7 +3,7 @@ use nixv::nix_commands::nix_build::nix_build_process;
 use nixv::nix_commands::nix_build_flake::*;
 use nixv::nix_commands::nix_develop_flake::nix_develop_flake_process;
 use nixv::nix_commands::nix_shell::nix_shell_process;
-use nixv::nix_logs::helpers::log_async;
+use nixv::nix_logs::helpers::log_;
 use std::collections::HashMap;
 use std::env;
 use std::process::{Command, Stdio};
@@ -27,7 +27,7 @@ fn main() {
         .filter_level(log_level)
         .format(|_buf, record| -> Result<(), std::io::Error> {
             Ok({
-                log_async(record);
+                log_(record);
             })
         })
         .init();

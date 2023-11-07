@@ -4,7 +4,6 @@ use std::{
     env,
     fs::{File, OpenOptions},
     io::Write,
-    thread,
 };
 use yansi::{Paint, Painted};
 
@@ -617,23 +616,23 @@ pub fn dump_state_to_file(state: CommandState) {
     let _ = file.write_all(json_dump.as_bytes());
 }
 
-pub fn log_async(record: &log::Record<'_>) {
+pub fn log_(record: &log::Record<'_>) {
     let str = record.args().to_string();
     match record.level() {
         log::Level::Error => {
-            thread::spawn(move || println!("{}", Paint::red(&filter_ansi(str))));
+            println!("{}", Paint::red(&filter_ansi(str)));
         }
         log::Level::Warn => {
-            thread::spawn(move || println!("{}", Paint::magenta(&filter_ansi(str))));
+            println!("{}", Paint::magenta(&filter_ansi(str)));
         }
         log::Level::Info => {
-            thread::spawn(move || println!("{}", Paint::white(&filter_ansi(str))));
+            println!("{}", Paint::white(&filter_ansi(str)));
         }
         log::Level::Debug => {
-            thread::spawn(move || println!("{}", Paint::bright_yellow(&filter_ansi(str))));
+            println!("{}", Paint::bright_yellow(&filter_ansi(str)));
         }
         log::Level::Trace => {
-            thread::spawn(move || println!("{}", Paint::blue(&filter_ansi(str))));
+            println!("{}", Paint::blue(&filter_ansi(str)));
         }
     }
 }
