@@ -18,6 +18,11 @@ jobs:
         run: cargo build --release
       - name: Run tests
         run: cargo test --release
+      - uses: cachix/install-nix-action@v20
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+      - uses: DeterminateSystems/magic-nix-cache-action@v2
+      - run: target/release/nixv build
       - name: Upload build artifact
         uses: actions/upload-artifact@v3
         with:
@@ -26,11 +31,7 @@ jobs:
             target/release/nixv
             target/release/nixv-shell
             target/release/nixv-build
-      - uses: cachix/install-nix-action@v20
-        with:
-          nix_path: nixpkgs=channel:nixos-unstable
-      - uses: DeterminateSystems/magic-nix-cache-action@v2
-      - run: target/release/nixv build
+            command_state.json
 
   build-mac:
     runs-on: macos-latest
@@ -40,6 +41,11 @@ jobs:
         run: cargo build --release
       - name: Run tests
         run: cargo test --release
+      - uses: cachix/install-nix-action@v20
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+      - uses: DeterminateSystems/magic-nix-cache-action@v2
+      - run: target/release/nixv build
       - name: Upload build artifact
         uses: actions/upload-artifact@v3
         with:
@@ -48,8 +54,4 @@ jobs:
             target/release/nixv
             target/release/nixv-shell
             target/release/nixv-build
-      - uses: cachix/install-nix-action@v20
-        with:
-          nix_path: nixpkgs=channel:nixos-unstable
-      - uses: DeterminateSystems/magic-nix-cache-action@v2
-      - run: target/release/nixv build
+            command_state.json

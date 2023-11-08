@@ -1,9 +1,8 @@
 use crate::nix_tracker::types::CommandState;
-use chrono::{DateTime, Utc};
 use std::{
     env,
     fs::{File, OpenOptions},
-    io::Write,
+    io::{self, Write},
 };
 use yansi::{Paint, Painted};
 
@@ -602,7 +601,6 @@ pub fn append_log_to_file(file_name: String, msg: String) {
 }
 
 pub fn dump_state_to_file(state: CommandState) {
-    let now: DateTime<Utc> = Utc::now();
     println!(
         "time taken to run the command: {:?}",
         state
@@ -611,28 +609,53 @@ pub fn dump_state_to_file(state: CommandState) {
             .duration_since(state.start)
             .expect("Clock may have gone backwards")
     );
-    let mut file = File::create("command_state_".to_owned() + &now.to_rfc3339() + ".json").unwrap();
-    let json_dump = serde_json::to_string_pretty(&state).unwrap();
+    let mut file = File::create("command_state".to_owned() + ".json").unwrap();
+    let json_dump = serde_json::to_string_pretty(&CommandState::to_json(state)).unwrap();
     let _ = file.write_all(json_dump.as_bytes());
 }
 
 pub fn log_(record: &log::Record<'_>) {
     let str = record.args().to_string();
+    let ansi = match env::var("ANSI").unwrap_or("true".to_owned()).as_str() {
+        "false" => false,
+        _ => true,
+    };
     match record.level() {
         log::Level::Error => {
-            println!("{}", Paint::red(&filter_ansi(str)));
+            if ansi {
+                println!("{}", Paint::red(&filter_ansi(str)));
+            } else {
+                println!("[Error]{}", filter_ansi(str))
+            }
         }
         log::Level::Warn => {
-            println!("{}", Paint::magenta(&filter_ansi(str)));
+            if ansi {
+                println!("{}", Paint::magenta(&filter_ansi(str)));
+            } else {
+                println!("[Warn] {}", filter_ansi(str))
+            }
         }
         log::Level::Info => {
-            println!("{}", Paint::white(&filter_ansi(str)));
+            if ansi {
+                println!("{}", Paint::white(&filter_ansi(str)));
+            } else {
+                println!("[Info] {}", filter_ansi(str))
+            }
         }
         log::Level::Debug => {
-            println!("{}", Paint::bright_yellow(&filter_ansi(str)));
+            if ansi {
+                println!("{}", Paint::bright_yellow(&filter_ansi(str)));
+            } else {
+                println!("[Debug]{}", filter_ansi(str))
+            }
         }
         log::Level::Trace => {
-            println!("{}", Paint::blue(&filter_ansi(str)));
+            if ansi {
+                println!("{}", Paint::blue(&filter_ansi(str)));
+            } else {
+                println!("[Trace]{}", filter_ansi(str))
+            }
         }
     }
+    io::stdout().flush().unwrap();
 }
