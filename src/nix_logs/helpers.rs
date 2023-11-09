@@ -1,8 +1,10 @@
 use crate::nix_tracker::types::CommandState;
+use chrono::Utc;
 use std::{
     env,
     fs::{File, OpenOptions},
     io::{self, Write},
+    path::Path,
 };
 use yansi::{Paint, Painted};
 
@@ -609,7 +611,11 @@ pub fn dump_state_to_file(state: CommandState) {
             .duration_since(state.start)
             .expect("Clock may have gone backwards")
     );
-    let mut file = File::create("command_state".to_owned() + ".json").unwrap();
+    let t = Utc::now().to_rfc3339().to_string();
+    let mut file = match Path::new("command_state.json").exists() {
+        true => File::create("command_state".to_owned() + "_" + &t + ".json").unwrap(),
+        false => File::create("command_state.json").unwrap(),
+    };
     let json_dump = serde_json::to_string_pretty(&CommandState::to_json(state)).unwrap();
     let _ = file.write_all(json_dump.as_bytes());
 }
