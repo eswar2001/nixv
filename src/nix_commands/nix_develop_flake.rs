@@ -26,13 +26,15 @@ pub fn nix_develop_flake_process(args: Vec<String>) -> Result<(), Error> {
         .arg("exit")
         .stderr(Stdio::piped())
         .stdout(Stdio::piped());
-    let p = cmd.spawn().expect("unable to run the command");
+    let mut p = cmd.spawn().expect("unable to run the command");
     let _stdout = p
         .stdout
+        .as_mut()
         .ok_or_else(|| Error::new(ErrorKind::Other, "Could not capture standard output."))?;
 
     let stderr = p
         .stderr
+        .as_mut()
         .ok_or_else(|| Error::new(ErrorKind::Other, "Could not capture standard output error."))?;
     let reader = BufReader::new(stderr);
     let mut state = CommandState::new();
@@ -45,5 +47,8 @@ pub fn nix_develop_flake_process(args: Vec<String>) -> Result<(), Error> {
     });
     state.end = Some(SystemTime::now());
     dump_state_to_file(state);
+    if !p.wait().expect("command wasn't running").success(){
+        log::error!("Nix build failed");
+    }
     Ok(())
 }
