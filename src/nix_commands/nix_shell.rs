@@ -41,6 +41,7 @@ pub fn nix_shell_process(args: Vec<String>) -> Result<(), Error> {
     dump_state_to_file(state);
     if !p.wait().expect("command wasn't running").success(){
         log::error!("Nix build failed");
+        std::process::exit(1);
     }
     Ok(())
 }
