@@ -7,16 +7,16 @@ use nixv::nix_logs::helpers::log_;
 use std::collections::HashMap;
 use std::env;
 use std::process::{Command, Stdio};
-
+/// This method serves as the entry point for the program. It collects command line arguments, sets up a logging configuration, and handles different commands based on the input arguments.
 fn main() {
-    let args: Vec<String> = env::args().collect();
-    let mut log_level_map = HashMap::new();
-    log_level_map.insert("error", log::LevelFilter::Error);
+    let args: Vec<String> = env::args().collect(); // Collect command line arguments
+    let mut log_level_map = HashMap::new(); // Create a HashMap for log levels
+    log_level_map.insert("error", log::LevelFilter::Error); // Insert log levels into the map
     log_level_map.insert("warn", log::LevelFilter::Warn);
     log_level_map.insert("info", log::LevelFilter::Info);
     log_level_map.insert("debug", log::LevelFilter::Debug);
     log_level_map.insert("trace", log::LevelFilter::Trace);
-    let log_level = match env::var("RUST_LOG") {
+    let log_level = match env::var("RUST_LOG") { // Set log level based on environment variable
         Ok(v) => log_level_map
             .get(v.as_str())
             .copied()
@@ -24,26 +24,26 @@ fn main() {
         Err(_) => log::LevelFilter::Info,
     };
     env_logger::builder()
-        .filter_level(log_level)
-        .format(|_buf, record| -> Result<(), std::io::Error> {
+        .filter_level(log_level) // Set log level for the logger
+        .format(|_buf, record| -> Result<(), std::io::Error> { // Customize log format
             Ok({
-                log_(record);
+                log_(record); // Log the record
             })
         })
-        .init();
-    let default = &String::from("");
-    match args.split_first() {
+        .init(); // Initialize the logger
+    let default = &String::from(""); // Create a default string
+    match args.split_first() { // Match the first command line argument
         Some((x, xs)) => {
-            let command = x.split('/').last().unwrap_or(default);
+            let command = x.split('/').last().unwrap_or(default); // Extract the command
             match command {
-                "nixv" => {
-                    let (subcommand, xargs) = xs.split_first().unwrap_or((default, &[]));
+                "nixv" => { // Handle 'nixv' command
+                    let (subcommand, xargs) = xs.split_first().unwrap_or((default, &[])); // Extract subcommand and arguments
                     match subcommand.as_str() {
-                        "develop" => {
-                            let _ = nix_develop_flake_process(xargs.to_vec().to_owned());
-                            let shell = "/bin/bash";
-                            let nix_develop_command = format!("nix develop --command {}", shell);
-                            let mut shell = Command::new("nix-shell");
+                        "develop" => { // Handle 'develop' subcommand
+                            let _ = nix_develop_flake_process(xargs.to_vec().to_owned()); // Call nix develop process
+                            let shell = "/bin/bash"; // Set shell
+                            let nix_develop_command = format!("nix develop --command {}", shell); // Create nix develop command
+                            let mut shell = Command::new("nix-shell"); // Create shell command
                             shell
                                 .arg("--command")
                                 .arg(&nix_develop_command)
@@ -51,24 +51,24 @@ fn main() {
                                 .stdout(Stdio::inherit())
                                 .stderr(Stdio::inherit())
                                 .status()
-                                .expect("Failed to execute 'nix develop'");
+                                .expect("Failed to execute 'nix develop'"); // Execute shell command
                         }
-                        "build" => {
-                            let _ = nix_build_flake_process(xargs.to_vec().to_owned());
+                        "build" => { // Handle 'build' subcommand
+                            let _ = nix_build_flake_process(xargs.to_vec().to_owned()); // Call nix build process
                         }
-                        _ => println!(
+                        _ => println!( // Handle unsupported subcommands
                             "supported commands: [nixv develop , nixv build , nixv-build , nixv-shell]\nlog-level can be set by ENV: RUST_LOG -> [ error , warn , info , debug , trace]\nto dump logs to files set ENV: DUMP_LOGS=true"
                         ),
                     };
                 }
-                "nixv-build" => {
-                    let _ = nix_build_process(xs.to_vec().to_owned());
+                "nixv-build" => { // Handle 'nixv-build' command
+                    let _ = nix_build_process(xs.to_vec().to_owned()); // Call nix build process
                 }
-                "nixv-shell" => {
-                    let _ = nix_shell_process(xs.to_vec().to_owned());
-                    let shell = "/bin/bash";
-                    let nix_develop_command = format!("nix-shell --command {}", shell);
-                    let mut shell = Command::new("nix-shell");
+                "nixv-shell" => { // Handle 'nixv-shell' command
+                    let _ = nix_shell_process(xs.to_vec().to_owned()); // Call nix shell process
+                    let shell = "/bin/bash"; // Set shell
+                    let nix_develop_command = format!("nix-shell --command {}", shell); // Create nix shell command
+                    let mut shell = Command::new("nix-shell"); // Create shell command
                     shell
                         .arg("--command")
                         .arg(&nix_develop_command)
@@ -76,14 +76,14 @@ fn main() {
                         .stdout(Stdio::inherit())
                         .stderr(Stdio::inherit())
                         .status()
-                        .expect("Failed to execute 'nix-shell'");
+                        .expect("Failed to execute 'nix-shell'"); // Execute shell command
                 }
-                _ => println!(
+                _ => println!( // Handle unsupported commands
                     "supported commands: [nixv develop , nixv build , nixv-build , nixv-shell]\nlog-level can be set by ENV: RUST_LOG -> [ error , warn , info , debug , trace]\nto dump logs to files set ENV: DUMP_LOGS=true"
                 ),
             }
         }
-        None => println!(
+        None => println!( // Handle no command line arguments
             "supported commands: [nixv develop , nixv build , nixv-build , nixv-shell]\nlog-level can be set by ENV: RUST_LOG -> [ error , warn , info , debug , trace]\nto dump logs to files set ENV: DUMP_LOGS=true"
         ),
     }

@@ -2,7 +2,7 @@ use std::thread;
 
 use super::{helpers::append_log_to_file, types::*};
 use serde_json::{self, Value};
-
+/// Extracts the package name from a store path by removing any occurrences of ".drv" and escaping double quotes.
 fn get_package_from_drv(store_path: String) -> String {
     match store_path.split_once('-') {
         Some((_, xs)) => xs
@@ -13,7 +13,7 @@ fn get_package_from_drv(store_path: String) -> String {
         None => store_path,
     }
 }
-
+/// Converts the given integer level to a Verbosity enum value.
 fn str_to_verbosity(lvl: i64) -> Verbosity {
     match lvl {
         0 => Verbosity::Error,
@@ -27,7 +27,7 @@ fn str_to_verbosity(lvl: i64) -> Verbosity {
         _ => Verbosity::Info,
     }
 }
-
+/// Converts a number to an ActivityType based on predefined mappings.
 fn number_to_activity_type(number: i64) -> ActivityType {
     match number {
         0 => ActivityType::ActUnknownType,
@@ -46,7 +46,7 @@ fn number_to_activity_type(number: i64) -> ActivityType {
         _ => ActivityType::ActUnknownType, // Default case for unknown values
     }
 }
-
+/// Converts an activity result code and fields into an ActivityResult enum variant.
 fn str_to_activity_result(activity_result: i64, fields: Value) -> ActivityResult {
     match activity_result {
         100 => {
@@ -89,7 +89,7 @@ fn str_to_activity_result(activity_result: i64, fields: Value) -> ActivityResult
         x => panic!("unable to parse str_to_activity_result: {}", x),
     }
 }
-
+/// Converts a given activity code and fields into an Activity enum variant.
 fn str_to_activity(activity: i64, fields: Value) -> Activity {
     match activity {
         // actUnknown = 0,
@@ -153,7 +153,7 @@ fn str_to_activity(activity: i64, fields: Value) -> Activity {
         _ => panic!("Invalid Activity"),
     }
 }
-
+/// Parses a JSON-formatted string and returns a tuple containing an optional JSONMessage and an integer.
 pub fn parse(line: String) -> (Option<JSONMessage>, i64) {
     let opt_res: Result<serde_json::Value, _> = serde_json::from_str(&line.replace("@nix ", ""));
     match opt_res {
