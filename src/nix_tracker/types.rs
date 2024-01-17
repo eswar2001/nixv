@@ -144,6 +144,7 @@ pub struct JSONCommandState {
 }
 
 impl CommandState {
+    /// Creates a new CommandState with default values for activity, required_derivations, running, completed, failed, start, and end.
     pub fn new() -> CommandState {
         CommandState {
             activity: HashMap::new(),
@@ -155,6 +156,7 @@ impl CommandState {
             end: None, // Initialize end as None by default
         }
     }
+    /// Converts the given CommandState into a JSONCommandState by iterating through the activities and converting them into their corresponding JSON representations, then returning a new JSONCommandState with the converted activities and other relevant state information.
     pub fn to_json(state: CommandState) -> JSONCommandState {
         let mut act_unknown = Vec::new();
         let mut act_copy_path = Vec::new();
