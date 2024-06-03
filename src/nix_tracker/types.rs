@@ -232,9 +232,10 @@ impl CommandState {
                 Activity::ActBuildWaiting => {
                     act_build_waiting.push(JSONActBuildWaiting { start, end })
                 }
+                Activity::ActFetchTree => {}
             }
         }
- 
+
         JSONCommandState {
             act_unknown,
             act_copy_path,

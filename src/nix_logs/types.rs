@@ -32,6 +32,7 @@ pub enum ActivityType {
     ActQueryPathInfoType = 109,
     ActPostBuildHookType = 110,
     ActBuildWaitingType = 111,
+    ActFetchTreeType = 112,
 }
 
 #[derive(Debug, Eq, Serialize, Deserialize, PartialEq, Clone, Copy)]
@@ -97,4 +98,5 @@ pub enum Activity {
     ActQueryPathInfo(String, String, String),
     ActPostBuildHook(String),
     ActBuildWaiting,
+    ActFetchTree,
 }

@@ -43,6 +43,7 @@ fn number_to_activity_type(number: i64) -> ActivityType {
         109 => ActivityType::ActQueryPathInfoType,
         110 => ActivityType::ActPostBuildHookType,
         111 => ActivityType::ActBuildWaitingType,
+        112 => ActivityType::ActFetchTreeType,
         _ => ActivityType::ActUnknownType, // Default case for unknown values
     }
 }
@@ -150,6 +151,10 @@ fn str_to_activity(activity: i64, fields: Value) -> Activity {
         }
         // actBuildWaiting = 111,
         111 => Activity::ActBuildWaiting,
+        // actFetchTree = 112,
+        112 => {
+            Activity::ActFetchTree
+        }
         _ => panic!("Invalid Activity"),
     }
 }
@@ -207,16 +212,15 @@ pub fn parse(line: String) -> (Option<JSONMessage>, i64) {
                         fields.clone(),
                     );
                     let text: Option<String> = match activity.clone() {
-                ActivityResult::BuildLogLine(msg) => Some(msg),
-                ActivityResult::UntrustedPath(msg) => Some(msg),
-                ActivityResult::CorruptedPath(msg) => Some(msg),
-                ActivityResult::SetPhase(msg) => Some(msg),
-                _ => None
-                // ActivityResult::Progress(msg) => Some(),
-                // ActivityResult::FileLinked(_, _) => Some(String::from("")),
-                // ActivityResult::SetExpected(_, _) => Some(String::from("")),
-                // ActivityResult::PostBuildLogLine(_) => Some(String::from("")),
-            };
+                        ActivityResult::BuildLogLine(msg) => Some(msg),
+                        ActivityResult::UntrustedPath(msg) => Some(msg),
+                        ActivityResult::CorruptedPath(msg) => Some(msg),
+                        ActivityResult::SetPhase(msg) => Some(msg),
+                        _ => None, // ActivityResult::Progress(msg) => Some(),
+                                   // ActivityResult::FileLinked(_, _) => Some(String::from("")),
+                                   // ActivityResult::SetExpected(_, _) => Some(String::from("")),
+                                   // ActivityResult::PostBuildLogLine(_) => Some(String::from("")),
+                    };
                     match text {
                         Some(msg) => {
                             thread::spawn(move || {
