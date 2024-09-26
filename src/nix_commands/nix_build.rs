@@ -7,7 +7,7 @@ use std::{
     process::{self as PC, Stdio},
     time::SystemTime,
 };
-
+/// Executes a nix-build process with the given arguments and processes the output. The method captures the standard output and error, parses the internal JSON log format, and logs the process state. If the nix-build process fails, the method logs an error and exits the program with a status code of 1.
 pub fn nix_build_process(args: Vec<String>) -> Result<(), Error> {
     let mut binding = PC::Command::new("nix-build");
     let cmd = binding

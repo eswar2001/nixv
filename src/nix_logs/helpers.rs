@@ -7,8 +7,9 @@ use std::{
     path::Path,
 };
 use yansi::{Paint, Painted};
-
+/// Removes ANSI escape sequences from the given UTF-8 string.
 pub fn filter_ansi(mut utf8_string: String) -> Painted<std::string::String> {
+    // List of ANSI escape sequences to filter from the string
     let filter_from_string = [
         "\\u001b[39m",
         "\\u001b[30m",
@@ -582,7 +583,7 @@ pub fn filter_ansi(mut utf8_string: String) -> Painted<std::string::String> {
     }
     Painted::new(utf8_string)
 }
-
+/// Appends the given message to a log file if the environment variable DUMP_LOGS is set to true.
 pub fn append_log_to_file(file_name: String, msg: String) {
     let append = match env::var("DUMP_LOGS") {
         Ok(value) => value.parse().unwrap_or_default(),
@@ -601,7 +602,7 @@ pub fn append_log_to_file(file_name: String, msg: String) {
         }
     }
 }
-
+/// Dump the given CommandState to a JSON file, including the time taken to run the command. If a file with the same name already exists, the new file will have a timestamp appended to its name.
 pub fn dump_state_to_file(state: CommandState) {
     println!(
         "time taken to run the command: {:?}",
@@ -619,7 +620,7 @@ pub fn dump_state_to_file(state: CommandState) {
     let json_dump = serde_json::to_string_pretty(&CommandState::to_json(state)).unwrap();
     let _ = file.write_all(json_dump.as_bytes());
 }
-
+/// This method takes a log record and prints it to the console with optional ANSI color formatting based on the log level.
 pub fn log_(record: &log::Record<'_>) {
     let str = record.args().to_string();
     let ansi = match env::var("ANSI").unwrap_or("true".to_owned()).as_str() {

@@ -7,7 +7,19 @@ use std::{
     process::{self as PC, Stdio},
     time::SystemTime,
 };
-
+/// Runs a Nix build process with the given arguments and captures the standard output and error.
+///
+/// # Arguments
+///
+/// * `args` - A vector of strings representing the arguments to be passed to the Nix build command.
+///
+/// # Returns
+///
+/// A `Result` containing `()` if the command executed successfully, or an `Error` if there was a problem.
+///
+/// # Panics
+///
+/// Panics if the command fails to execute.
 pub fn nix_build_flake_process(args: Vec<String>) -> Result<(), Error> {
     let mut binding = PC::Command::new("nix");
     let cmd = binding
