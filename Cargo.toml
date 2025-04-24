@@ -16,8 +16,8 @@ serde_json = {version = "1.0", features = []}
 strip-ansi-escapes = "0.2.0"
 use = "0.0.1-pre.0"
 yansi = "1.0.0-gamma"
-chrono = "0.4.31"
 sysinfo = "0.34.2"
+chrono = { version = "0.4", features = ["serde"] }
 
 [profile.release]
 opt-level = 3
