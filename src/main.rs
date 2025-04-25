@@ -519,17 +519,27 @@ fn find_all_descendant_pids(start_pid: Pid, sys: &System) -> HashSet<Pid> {
     descendants
 }
 
-/// Get the base path for monitoring output
+// /// Get the base path for monitoring output
+// fn get_monitoring_base_path() -> PathBuf {
+//     // Use environment variable if set, otherwise default
+//     if let Ok(path) = env::var("NIXV_MONITOR_PATH") {
+//         PathBuf::from(path)
+//     } else if Path::new("/tmp/nix-monitoring").exists() || create_dir_all("/tmp/nix-monitoring").is_ok() {
+//         // Use /tmp for Kubernetes pods since it's usually writable
+//         PathBuf::from("/tmp/nix-monitoring")
+//     } else {
+//         // Fall back to current directory
+//         PathBuf::from("./monitoring")
+//     }
+// }
+
 fn get_monitoring_base_path() -> PathBuf {
-    // Use environment variable if set, otherwise default
+    // Use environment variable if set, otherwise use current directory
     if let Ok(path) = env::var("NIXV_MONITOR_PATH") {
         PathBuf::from(path)
-    } else if Path::new("/tmp/nix-monitoring").exists() || create_dir_all("/tmp/nix-monitoring").is_ok() {
-        // Use /tmp for Kubernetes pods since it's usually writable
-        PathBuf::from("/tmp/nix-monitoring")
     } else {
-        // Fall back to current directory
-        PathBuf::from("./monitoring")
+        // Use current working directory
+        PathBuf::from("./nix-monitoring")
     }
 }
 
